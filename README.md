@@ -53,20 +53,4 @@ student/
 
 ---
 
-## API Reference
 
-**Auth**
-
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/auth/register` | Create a new teacher account |
-| POST | `/api/auth/login` | Login and get teacher info |
-
-**Students**
-
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/students` | Get all students |
-| POST | `/api/students` | Add a new student |
-| PUT | `/api/students/:id` | Update student by ID |
-| DELETE | `/api/students/:id` | Delete student by ID |
