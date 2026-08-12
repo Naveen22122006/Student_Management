@@ -32,14 +32,43 @@ header h1 {
     font-size: 14px;
 }
 
+/* right side of header has name and logout */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.teacher-badge {
+    font-size: 13px;
+    background: rgba(255,255,255,0.18);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+#logoutBtn {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#logoutBtn:hover {
+    background: rgba(255,255,255,0.28);
+}
+
 main {
     max-width: 1300px;
     margin: 30px auto;
     padding: 0 20px;
 }
 
-/* Statistics */
-
+/* three stat boxes */
 .stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -65,8 +94,6 @@ main {
     font-weight: bold;
     color: #2563eb;
 }
-
-/* Layout */
 
 .layout {
     display: grid;
@@ -102,8 +129,6 @@ main {
     color: #2563eb;
     font-weight: bold;
 }
-
-/* Form */
 
 label {
     display: block;
@@ -169,8 +194,6 @@ button {
     display: none !important;
 }
 
-/* Student List */
-
 .list-header {
     display: flex;
     justify-content: space-between;
@@ -201,8 +224,7 @@ button {
     width: 150px;
 }
 
-/* Table */
-
+/* student table */
 .table-container {
     width: 100%;
     overflow-x: auto;
@@ -230,8 +252,6 @@ tr:hover {
     background: #f8fafc;
 }
 
-/* Badges */
-
 .roll-badge {
     font-weight: bold;
 }
@@ -243,12 +263,11 @@ tr:hover {
     border-radius: 4px;
 }
 
-/* Action Buttons */
-
 .text-right {
     white-space: nowrap;
 }
 
+/* edit and delete buttons */
 .btn-action {
     padding: 6px 10px;
     margin-right: 5px;
@@ -273,8 +292,6 @@ tr:hover {
     background: #fecaca;
 }
 
-/* Loading */
-
 .loading {
     text-align: center;
     padding: 25px;
@@ -291,8 +308,7 @@ tr:hover {
     margin-bottom: 8px;
 }
 
-/* Toast */
-
+/* toast notification */
 #toastContainer {
     position: fixed;
     right: 20px;
@@ -321,23 +337,18 @@ tr:hover {
     background: #2563eb;
 }
 
-/* Responsive */
-
+/* responsive */
 @media (max-width: 900px) {
-
     .layout {
         grid-template-columns: 1fr;
     }
-
     .list-header {
         flex-direction: column;
         align-items: stretch;
     }
-
     .filters {
         flex-direction: column;
     }
-
     .filters input,
     .filters select {
         width: 100%;
@@ -345,29 +356,23 @@ tr:hover {
 }
 
 @media (max-width: 600px) {
-
     .stats {
         grid-template-columns: 1fr;
     }
-
     .header-content {
         flex-direction: column;
         gap: 8px;
         align-items: flex-start;
     }
-
     header h1 {
         font-size: 20px;
     }
-
     main {
         margin-top: 20px;
     }
-
     .card {
         padding: 16px;
     }
-
     th,
     td {
         font-size: 13px;

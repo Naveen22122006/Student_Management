@@ -1,167 +1,118 @@
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
 const Student = require("../models/student");
 
-// GET /api/students - Get all students
-router.get("/", async (req, res) => {
+// get all students
+router.get("/", async function(req, res) {
     try {
-        const students = await Student.find().sort({ createdAt: -1 });
-
+        var list = await Student.find().sort({ createdAt: -1 });
         res.json({
             success: true,
-            count: students.length,
-            data: students,
+            count: list.length,
+            data: list,
             source: "MongoDB",
             message: "Students fetched successfully"
         });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch students",
-            error: error.message
-        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Failed to fetch students", error: err.message });
     }
 });
 
-// GET /api/students/:id - Get single student
-router.get("/:id", async (req, res) => {
+// get one student by id
+router.get("/:id", async function(req, res) {
     try {
-        const student = await Student.findById(req.params.id);
-
+        var student = await Student.findById(req.params.id);
         if (!student) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
+            return res.status(404).json({ success: false, message: "Student not found" });
         }
-
-        res.json({
-            success: true,
-            data: student
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Error retrieving student",
-            error: error.message
-        });
+        res.json({ success: true, data: student });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Error retrieving student", error: err.message });
     }
 });
 
-// POST /api/students - Create new student
-router.post("/", async (req, res) => {
+// add a new student
+router.post("/", async function(req, res) {
     try {
-        const { name, rollNo, email, course, age } = req.body;
+        var name   = req.body.name;
+        var rollNo = req.body.rollNo;
+        var email  = req.body.email;
+        var course = req.body.course;
+        var age    = req.body.age;
 
         if (!name || !rollNo || !email || !course || !age) {
+            return res.status(400).json({ success: false, message: "Please fill in all required fields" });
+        }
+
+        var rollNum = String(rollNo).trim();
+
+        // check if roll number already exists
+        var existing = await Student.findOne({ rollNo: rollNum });
+        if (existing) {
             return res.status(400).json({
                 success: false,
-                message: "Please fill in all required fields"
+                message: "Student with Roll Number '" + rollNum + "' already exists"
             });
         }
 
-        const trimmedRoll = String(rollNo).trim();
-
-        const existingStudent = await Student.findOne({
-            rollNo: trimmedRoll
-        });
-
-        if (existingStudent) {
-            return res.status(400).json({
-                success: false,
-                message: `Student with Roll Number '${trimmedRoll}' already exists`
-            });
-        }
-
-        const newStudent = new Student({
-            name: name.trim(),
-            rollNo: trimmedRoll,
-            email: email.trim(),
+        var newStudent = new Student({
+            name:   name.trim(),
+            rollNo: rollNum,
+            email:  email.trim(),
             course: course.trim(),
-            age: Number(age)
+            age:    Number(age)
         });
 
-        const savedStudent = await newStudent.save();
+        var saved = await newStudent.save();
+        res.status(201).json({ success: true, data: saved, message: "Student registered successfully" });
 
-        res.status(201).json({
-            success: true,
-            data: savedStudent,
-            message: "Student registered successfully"
-        });
-
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message || "Failed to create student"
-        });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message || "Failed to create student" });
     }
 });
 
-// PUT /api/students/:id - Update student
-router.put("/:id", async (req, res) => {
+// update student details
+router.put("/:id", async function(req, res) {
     try {
-        const { name, rollNo, email, course, age } = req.body;
+        var name   = req.body.name;
+        var rollNo = req.body.rollNo;
+        var email  = req.body.email;
+        var course = req.body.course;
+        var age    = req.body.age;
 
-        const updatedStudent = await Student.findByIdAndUpdate(
+        var updated = await Student.findByIdAndUpdate(
             req.params.id,
             {
-                name: name?.trim(),
-                rollNo: rollNo?.trim(),
-                email: email?.trim(),
-                course: course?.trim(),
-                age: Number(age)
+                name:   name   ? name.trim()   : name,
+                rollNo: rollNo ? rollNo.trim() : rollNo,
+                email:  email  ? email.trim()  : email,
+                course: course ? course.trim() : course,
+                age:    Number(age)
             },
-            {
-                new: true,
-                runValidators: true
-            }
+            { new: true, runValidators: true }
         );
 
-        if (!updatedStudent) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
+        if (!updated) {
+            return res.status(404).json({ success: false, message: "Student not found" });
         }
 
-        res.json({
-            success: true,
-            data: updatedStudent,
-            message: "Student details updated successfully"
-        });
+        res.json({ success: true, data: updated, message: "Student details updated successfully" });
 
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message || "Failed to update student"
-        });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message || "Failed to update student" });
     }
 });
 
-// DELETE /api/students/:id - Delete student
-router.delete("/:id", async (req, res) => {
+// delete a student
+router.delete("/:id", async function(req, res) {
     try {
-        const deletedStudent = await Student.findByIdAndDelete(req.params.id);
-
-        if (!deletedStudent) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
+        var deleted = await Student.findByIdAndDelete(req.params.id);
+        if (!deleted) {
+            return res.status(404).json({ success: false, message: "Student not found" });
         }
-
-        res.json({
-            success: true,
-            data: deletedStudent,
-            message: "Student deleted successfully"
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to delete student",
-            error: error.message
-        });
+        res.json({ success: true, data: deleted, message: "Student deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Failed to delete student", error: err.message });
     }
 });
 

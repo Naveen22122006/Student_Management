@@ -1,0 +1,166 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f0f2f5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* main box */
+.card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 360px;
+    padding: 30px;
+}
+
+.card h2 {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.card p {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* tab buttons at top */
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: none;
+    font-size: 14px;
+    cursor: pointer;
+    color: #888;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+}
+
+.tab-btn.active {
+    color: #222;
+    border-bottom-color: #333;
+    font-weight: bold;
+}
+
+/* show/hide panels */
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    margin: 12px 0 4px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    outline: none;
+}
+
+input:focus {
+    border-color: #555;
+}
+
+/* small red error text */
+.form-error {
+    font-size: 12px;
+    color: #c0392b;
+    margin-top: 3px;
+    display: none;
+}
+
+.form-error.visible {
+    display: block;
+}
+
+button[type="submit"] {
+    width: 100%;
+    margin-top: 18px;
+    padding: 10px;
+    background: #222;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+button[type="submit"]:hover {
+    background: #444;
+}
+
+button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.hint {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    margin-top: 14px;
+}
+
+/* toast container */
+#toastContainer {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#toastContainer .toast {
+    padding: 10px 16px;
+    border-radius: 5px;
+    font-size: 13px;
+    color: white;
+    animation: fadeIn 0.3s;
+}
+
+#toastContainer .toast.success {
+    background: #2d6a4f;
+}
+
+#toastContainer .toast.error {
+    background: #c0392b;
+}
+
+#toastContainer .toast.info {
+    background: #555;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

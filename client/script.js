@@ -1,494 +1,337 @@
-const API = "http://localhost:5000/api/students";
+var API_URL = "http://localhost:5000/api/students";
 
-const form = document.getElementById("studentForm");
-const idInput = document.getElementById("studentId");
-const name = document.getElementById("name");
-const rollNo = document.getElementById("rollNo");
-const email = document.getElementById("email");
-const course = document.getElementById("course");
-const age = document.getElementById("age");
+// get all the dom elements
+var form = document.getElementById("studentForm");
+var idField = document.getElementById("studentId");
+var nameField = document.getElementById("name");
+var rollField = document.getElementById("rollNo");
+var emailField = document.getElementById("email");
+var courseField = document.getElementById("course");
+var ageField = document.getElementById("age");
 
-const formTitle = document.getElementById("formTitle");
-const formBadge = document.getElementById("formBadge");
-const submitText = document.getElementById("submitBtnText");
-const cancelBtn = document.getElementById("cancelEditBtn");
+var formTitle = document.getElementById("formTitle");
+var formBadge = document.getElementById("formBadge");
+var submitText = document.getElementById("submitBtnText");
+var cancelBtn = document.getElementById("cancelEditBtn");
 
-const table = document.getElementById("studentTableBody");
-const loading = document.getElementById("loadingSpinner");
-const empty = document.getElementById("emptyState");
-const count = document.getElementById("studentCountBadge");
+var tableBody = document.getElementById("studentTableBody");
+var loadingDiv = document.getElementById("loadingSpinner");
+var emptyDiv = document.getElementById("emptyState");
+var countBadge = document.getElementById("studentCountBadge");
 
-const search = document.getElementById("searchInput");
-const filter = document.getElementById("courseFilter");
+var searchBox = document.getElementById("searchInput");
+var courseFilter = document.getElementById("courseFilter");
 
-const total = document.getElementById("statTotalStudents");
-const courses = document.getElementById("statCoursesCount");
-const avgAge = document.getElementById("statAvgAge");
+var totalStat = document.getElementById("statTotalStudents");
+var coursesStat = document.getElementById("statCoursesCount");
+var ageStat = document.getElementById("statAvgAge");
 
-const status = document.getElementById("statusText");
-const toastBox = document.getElementById("toastContainer");
+var statusText = document.getElementById("statusText");
+var toastBox = document.getElementById("toastContainer");
 
-let students = [];
-let editing = false;
+var students = [];
+var isEditing = false;
 
-// ==========================================
-// START
-// ==========================================
+// when page loads show teacher name and load students
+document.addEventListener("DOMContentLoaded", function () {
+    try {
+        var teacherInfo = JSON.parse(sessionStorage.getItem("teacher") || "{}");
+        var nameEl = document.getElementById("teacherName");
+        if (nameEl && teacherInfo.name) {
+            nameEl.textContent = "👤 " + teacherInfo.name;
+        }
+    } catch (e) { }
 
-document.addEventListener("DOMContentLoaded", loadStudents);
+    loadStudents();
+});
 
 form.addEventListener("submit", saveStudent);
 cancelBtn.addEventListener("click", resetForm);
-search.addEventListener("input", render);
-filter.addEventListener("change", render);
+searchBox.addEventListener("input", renderTable);
+courseFilter.addEventListener("change", renderTable);
 
-// ==========================================
-// LOAD STUDENTS
-// ==========================================
-
+// get all students from server
 async function loadStudents() {
-
-    loading.classList.remove("hidden");
-    status.textContent = "Connecting...";
+    loadingDiv.classList.remove("hidden");
+    statusText.textContent = "Connecting...";
 
     try {
-
-        const res = await fetch(API);
-        const data = await res.json();
+        var res = await fetch(API_URL);
+        var data = await res.json();
 
         if (!res.ok || !data.success) {
-            throw new Error(
-                data.message || "Server error"
-            );
+            throw new Error(data.message || "Server error");
         }
 
         students = data.data || [];
-
-        status.textContent = "Connected";
+        statusText.textContent = "Connected";
 
         updateStats();
         updateFilter();
-        render();
+        renderTable();
 
     } catch (err) {
-
         console.error(err);
-
         students = [];
-
-        status.textContent = "Connection Error";
-
+        statusText.textContent = "Connection Error";
         updateStats();
-        render();
-
-        showToast(
-            "Unable to connect to Student Server",
-            "error"
-        );
+        renderTable();
+        showToast("Unable to connect to Student Server", "error");
 
     } finally {
-
-        loading.classList.add("hidden");
+        loadingDiv.classList.add("hidden");
     }
 }
 
-// ==========================================
-// RENDER TABLE
-// ==========================================
+// show students in table
+function renderTable() {
+    var searchVal = searchBox.value.toLowerCase().trim();
+    var filterVal = courseFilter.value;
 
-function render() {
+    var filtered = students.filter(function (s) {
+        var matchText =
+            String(s.name || "").toLowerCase().includes(searchVal) ||
+            String(s.rollNo || "").toLowerCase().includes(searchVal) ||
+            String(s.email || "").toLowerCase().includes(searchVal) ||
+            String(s.course || "").toLowerCase().includes(searchVal);
 
-    const text = search.value.toLowerCase().trim();
-    const selected = filter.value;
-
-    const list = students.filter(s => {
-
-        const match =
-            String(s.name || "").toLowerCase().includes(text) ||
-            String(s.rollNo || "").toLowerCase().includes(text) ||
-            String(s.email || "").toLowerCase().includes(text) ||
-            String(s.course || "").toLowerCase().includes(text);
-
-        const courseMatch =
-            selected === "all" ||
-            s.course === selected;
-
-        return match && courseMatch;
+        var matchCourse = filterVal === "all" || s.course === filterVal;
+        return matchText && matchCourse;
     });
 
-    table.innerHTML = "";
+    tableBody.innerHTML = "";
+    countBadge.textContent = filtered.length + " of " + students.length + " records";
 
-    count.textContent =
-        `${list.length} of ${students.length} records`;
-
-    if (!list.length) {
-
-        empty.classList.remove("hidden");
+    if (filtered.length === 0) {
+        emptyDiv.classList.remove("hidden");
         return;
     }
 
-    empty.classList.add("hidden");
+    emptyDiv.classList.add("hidden");
 
-    list.forEach(s => {
+    for (var i = 0; i < filtered.length; i++) {
+        var s = filtered[i];
+        var row = document.createElement("tr");
 
-        const row = document.createElement("tr");
+        row.innerHTML =
+            "<td>" + safe(s.rollNo) + "</td>" +
+            "<td><strong>" + safe(s.name) + "</strong></td>" +
+            "<td>" + safe(s.email) + "</td>" +
+            "<td>" + safe(s.course) + "</td>" +
+            "<td>" + safe(s.age) + "</td>" +
+            "<td>" +
+            "<button type='button' class='btn-action edit' onclick=\"editStudent('" + s._id + "')\">Edit</button> " +
+            "<button type='button' class='btn-action delete' onclick=\"deleteStudent('" + s._id + "')\">Delete</button>" +
+            "</td>";
 
-        row.innerHTML = `
-            <td>${safe(s.rollNo)}</td>
-            <td><strong>${safe(s.name)}</strong></td>
-            <td>${safe(s.email)}</td>
-            <td>${safe(s.course)}</td>
-            <td>${safe(s.age)}</td>
-            <td>
-                <button
-                    type="button"
-                    class="btn-action edit"
-                    onclick="editStudent('${s._id}')">
-                    Edit
-                </button>
-
-                <button
-                    type="button"
-                    class="btn-action delete"
-                    onclick="deleteStudent('${s._id}')">
-                    Delete
-                </button>
-            </td>
-        `;
-
-        table.appendChild(row);
-    });
+        tableBody.appendChild(row);
+    }
 }
 
-// ==========================================
-// ADD / UPDATE
-// ==========================================
-
+// add new student or update existing
 async function saveStudent(e) {
-
     e.preventDefault();
 
-    const data = {
-        name: name.value.trim(),
-        rollNo: rollNo.value.trim(),
-        email: email.value.trim(),
-        course: course.value.trim(),
-        age: Number(age.value)
+    var info = {
+        name: nameField.value.trim(),
+        rollNo: rollField.value.trim(),
+        email: emailField.value.trim(),
+        course: courseField.value.trim(),
+        age: Number(ageField.value)
     };
 
-    if (
-        !data.name ||
-        !data.rollNo ||
-        !data.email ||
-        !data.course ||
-        !data.age
-    ) {
-
-        showToast(
-            "Please fill all fields",
-            "error"
-        );
-
+    if (!info.name || !info.rollNo || !info.email || !info.course || !info.age) {
+        showToast("Please fill all fields", "error");
         return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-
-        showToast(
-            "Enter a valid email",
-            "error"
-        );
-
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.email)) {
+        showToast("Enter a valid email", "error");
         return;
     }
 
-    if (data.age < 1 || data.age > 100) {
-
-        showToast(
-            "Age must be between 1 and 100",
-            "error"
-        );
-
+    if (info.age < 1 || info.age > 100) {
+        showToast("Age must be between 1 and 100", "error");
         return;
     }
 
-    const url = editing
-        ? `${API}/${encodeURIComponent(idInput.value)}`
-        : API;
+    var url = isEditing ? API_URL + "/" + encodeURIComponent(idField.value) : API_URL;
+    var method = isEditing ? "PUT" : "POST";
 
-    const method = editing ? "PUT" : "POST";
-
-    submitText.textContent =
-        editing ? "Updating..." : "Adding...";
+    submitText.textContent = isEditing ? "Updating..." : "Adding...";
 
     try {
-
-        const res = await fetch(url, {
-            method,
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
+        var res = await fetch(url, {
+            method: method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(info)
         });
 
-        const result = await res.json();
+        var result = await res.json();
 
         if (!res.ok || !result.success) {
-
-            throw new Error(
-                result.message || "Operation failed"
-            );
+            throw new Error(result.message || "Operation failed");
         }
 
-        showToast(
-            editing
-                ? "Student updated successfully"
-                : "Student registered successfully",
-            "success"
-        );
-
+        showToast(isEditing ? "Student updated successfully" : "Student registered successfully", "success");
         resetForm();
         await loadStudents();
 
     } catch (err) {
-
         console.error(err);
-
-        showToast(
-            err.message || "Server error",
-            "error"
-        );
-
+        showToast(err.message || "Server error", "error");
     } finally {
-
         submitText.textContent = "Add Student";
     }
 }
 
-// ==========================================
-// EDIT
-// ==========================================
-
+// fill form with student data to edit
 function editStudent(id) {
-
-    const student =
-        students.find(s =>
-            String(s._id) === String(id)
-        );
+    var student = null;
+    for (var i = 0; i < students.length; i++) {
+        if (String(students[i]._id) === String(id)) {
+            student = students[i];
+            break;
+        }
+    }
 
     if (!student) {
-
-        showToast(
-            "Student not found",
-            "error"
-        );
-
+        showToast("Student not found", "error");
         return;
     }
 
-    idInput.value = student._id;
-    name.value = student.name || "";
-    rollNo.value = student.rollNo || "";
-    email.value = student.email || "";
-    course.value = student.course || "";
-    age.value = student.age || "";
+    idField.value = student._id;
+    nameField.value = student.name || "";
+    rollField.value = student.rollNo || "";
+    emailField.value = student.email || "";
+    courseField.value = student.course || "";
+    ageField.value = student.age || "";
 
-    editing = true;
+    isEditing = true;
 
     formTitle.textContent = "Edit Student";
     formBadge.textContent = "Editing";
     formBadge.classList.add("editing");
-
     submitText.textContent = "Update Student";
-
     cancelBtn.classList.remove("hidden");
 
-    name.focus();
+    nameField.focus();
 }
 
-// ==========================================
-// DELETE
-// ==========================================
-
+// delete a student
 async function deleteStudent(id) {
-
-    const student =
-        students.find(s =>
-            String(s._id) === String(id)
-        );
+    var student = null;
+    for (var i = 0; i < students.length; i++) {
+        if (String(students[i]._id) === String(id)) {
+            student = students[i];
+            break;
+        }
+    }
 
     if (!student) return;
 
-    const yes = confirm(
-        `Are you sure you want to delete "${student.name}"?`
-    );
-
+    var yes = confirm('Are you sure you want to delete "' + student.name + '"?');
     if (!yes) return;
 
     try {
-
-        const res = await fetch(
-            `${API}/${encodeURIComponent(id)}`,
-            {
-                method: "DELETE"
-            }
-        );
-
-        const data = await res.json();
+        var res = await fetch(API_URL + "/" + encodeURIComponent(id), { method: "DELETE" });
+        var data = await res.json();
 
         if (!res.ok || !data.success) {
-
-            throw new Error(
-                data.message || "Delete failed"
-            );
+            throw new Error(data.message || "Delete failed");
         }
 
-        showToast(
-            "Student deleted successfully",
-            "success"
-        );
+        showToast("Student deleted successfully", "success");
 
-        if (
-            String(idInput.value) === String(id)
-        ) {
+        if (String(idField.value) === String(id)) {
             resetForm();
         }
 
         await loadStudents();
 
     } catch (err) {
-
         console.error(err);
-
-        showToast(
-            err.message || "Delete failed",
-            "error"
-        );
+        showToast(err.message || "Delete failed", "error");
     }
 }
 
-// ==========================================
-// RESET
-// ==========================================
-
+// reset form back to add mode
 function resetForm() {
-
     form.reset();
-
-    idInput.value = "";
-
-    editing = false;
+    idField.value = "";
+    isEditing = false;
 
     formTitle.textContent = "Add Student";
     formBadge.textContent = "New";
-
     formBadge.classList.remove("editing");
-
     submitText.textContent = "Add Student";
-
     cancelBtn.classList.add("hidden");
 }
 
-// ==========================================
-// STATISTICS
-// ==========================================
-
+// update numbers at top
 function updateStats() {
+    totalStat.textContent = students.length;
 
-    total.textContent = students.length;
+    var courseList = [];
+    for (var i = 0; i < students.length; i++) {
+        var c = students[i].course;
+        if (c && courseList.indexOf(c) === -1) {
+            courseList.push(c);
+        }
+    }
+    coursesStat.textContent = courseList.length;
 
-    const uniqueCourses = [
-        ...new Set(
-            students
-                .map(s => s.course)
-                .filter(Boolean)
-        )
-    ];
-
-    courses.textContent =
-        uniqueCourses.length;
-
-    if (!students.length) {
-
-        avgAge.textContent = "0";
+    if (students.length === 0) {
+        ageStat.textContent = "0";
         return;
     }
 
-    const sum = students.reduce(
-        (total, s) =>
-            total + (Number(s.age) || 0),
-        0
-    );
-
-    avgAge.textContent =
-        (sum / students.length).toFixed(1);
+    var total = 0;
+    for (var i = 0; i < students.length; i++) {
+        total += Number(students[i].age) || 0;
+    }
+    ageStat.textContent = (total / students.length).toFixed(1);
 }
 
-// ==========================================
-// COURSE FILTER
-// ==========================================
-
+// update course dropdown
 function updateFilter() {
+    var prevVal = courseFilter.value;
+    var courseList = [];
 
-    const old = filter.value;
+    for (var i = 0; i < students.length; i++) {
+        var c = students[i].course;
+        if (c && courseList.indexOf(c) === -1) {
+            courseList.push(c);
+        }
+    }
+    courseList.sort();
 
-    const list = [
-        ...new Set(
-            students
-                .map(s => s.course)
-                .filter(Boolean)
-        )
-    ].sort();
+    courseFilter.innerHTML = '<option value="all">All Courses</option>';
 
-    filter.innerHTML =
-        `<option value="all">All Courses</option>`;
+    for (var i = 0; i < courseList.length; i++) {
+        var opt = document.createElement("option");
+        opt.value = courseList[i];
+        opt.textContent = courseList[i];
+        courseFilter.appendChild(opt);
+    }
 
-    list.forEach(c => {
-
-        const option =
-            document.createElement("option");
-
-        option.value = c;
-        option.textContent = c;
-
-        filter.appendChild(option);
-    });
-
-    if (list.includes(old)) {
-        filter.value = old;
+    if (courseList.indexOf(prevVal) !== -1) {
+        courseFilter.value = prevVal;
     }
 }
 
-// ==========================================
-// TOAST
-// ==========================================
-
-function showToast(message, type = "info") {
-
-    const toast =
-        document.createElement("div");
-
-    toast.className =
-        `toast ${type}`;
-
-    toast.textContent = message;
-
+// show small popup
+function showToast(msg, type) {
+    var toast = document.createElement("div");
+    toast.className = "toast " + (type || "info");
+    toast.textContent = msg;
     toastBox.appendChild(toast);
-
-    setTimeout(() => {
-
-        toast.remove();
-
-    }, 3000);
+    setTimeout(function () { toast.remove(); }, 3000);
 }
 
-// ==========================================
-// SECURITY
-// ==========================================
-
-function safe(value) {
-
-    return String(value ?? "")
+// escape html so no XSS
+function safe(val) {
+    return String(val == null ? "" : val)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -496,9 +339,15 @@ function safe(value) {
         .replace(/'/g, "&#039;");
 }
 
-// ==========================================
-// GLOBAL FUNCTIONS
-// ==========================================
+// logout
+function logoutTeacher() {
+    var yes = confirm("Are you sure you want to logout?");
+    if (!yes) return;
+    sessionStorage.removeItem("teacher");
+    window.location.href = "login.html";
+}
 
+// need these for onclick in html
 window.editStudent = editStudent;
 window.deleteStudent = deleteStudent;
+window.logoutTeacher = logoutTeacher;
